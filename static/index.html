@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProposalCraft — Autonomous RFP & Proposal Generator</title>
+  <meta name="description" content="Generate enterprise-ready business proposals, architecture specs, and multi-format PDF, DOCX, and PPTX documents with LangGraph and Groq." />
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: rgba(15, 23, 42, 0.75);
+      --border-card: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-blue-hover: #2563eb;
+      --accent-indigo: #6366f1;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+      background-attachment: fixed;
+    }
+
+    /* Top Navbar */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(9, 13, 22, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-card);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+    }
+
+    .brand-title span {
+      background: linear-gradient(135deg, #60a5fa, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-tags {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.12);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+    }
+
+    .tag-badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    .docs-btn {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-card);
+      transition: all 0.2s ease;
+    }
+
+    .docs-btn:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 40px 24px 80px 24px;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-card);
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+      color: white;
+    }
+
+    .hero-title .gradient-text {
+      background: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #ec4899 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Layout Grid */
+    .app-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+
+    /* Glass Cards */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: 28px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--accent-blue);
+      fill: none;
+      stroke-width: 2;
+    }
+
+    /* Presets Toolbar */
+    .presets-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .preset-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .preset-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-card);
+      color: var(--text-secondary);
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-pill:hover {
+      background: rgba(59, 130, 246, 0.18);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.35);
+    }
+
+    /* Form Inputs */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 120px;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .text-input, .select-input {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-card);
+      color: white;
+      font-size: 14px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .text-input:focus, .select-input:focus, .textarea-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .textarea-input {
+      width: 100%;
+      height: 180px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      color: white;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 14px 16px;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      margin-top: 12px;
+      margin-bottom: 20px;
+      border: 2px dashed rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-blue);
+      background: rgba(59, 130, 246, 0.06);
+    }
+
+    .dropzone-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .dropzone-text strong {
+      color: #60a5fa;
+    }
+
+    /* Action Buttons */
+    .btn-submit {
+      width: 100%;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-indigo));
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.35);
+      transition: all 0.2s ease;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+      background: linear-gradient(135deg, var(--accent-blue-hover), #4f46e5);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Agent Progress Stepper */
+    .stepper {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 24px 0 12px 0;
+      padding: 18px;
+      background: rgba(15, 23, 42, 0.7);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-card);
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0.4;
+      transition: all 0.3s ease;
+    }
+
+    .step-item.active {
+      opacity: 1;
+    }
+
+    .step-item.done {
+      opacity: 0.9;
+    }
+
+    .step-indicator {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+      position: relative;
+    }
+
+    .step-item.active .step-indicator {
+      background: var(--accent-blue);
+      box-shadow: 0 0 14px rgba(59, 130, 246, 0.8);
+      animation: pulse 1.5s infinite;
+    }
+
+    .step-item.done .step-indicator {
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    .step-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .step-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Results Card */
+    .results-card {
+      display: none;
+      margin-top: 36px;
+    }
+
+    /* Export Bar */
+    .export-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.9);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-card);
+      margin-bottom: 24px;
+    }
+
+    .export-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .export-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .export-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .export-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-export-pdf {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-export-pdf:hover {
+      background: linear-gradient(135deg, #f87171, #b91c1c);
+      transform: translateY(-1px);
+    }
+
+    .btn-export-docx {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-export-docx:hover {
+      background: linear-gradient(135deg, #3b82f6, #1e40af);
+      transform: translateY(-1px);
+    }
+
+    .btn-export-pptx {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: white;
+      box-shadow: 0 4px 14px rgba(217, 119, 6, 0.3);
+    }
+
+    .btn-export-pptx:hover {
+      background: linear-gradient(135deg, #f59e0b, #92400e);
+      transform: translateY(-1px);
+    }
+
+    /* Metric Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .metric-value.emerald { color: #34d399; }
+    .metric-value.blue { color: #60a5fa; }
+    .metric-value.amber { color: #fbbf24; }
+
+    /* Tabs */
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid var(--border-card);
+      gap: 8px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 18px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: white;
+    }
+
+    .tab-btn.active {
+      color: #60a5fa;
+      border-bottom-color: #3b82f6;
+    }
+
+    .tab-content {
+      display: none;
+      line-height: 1.7;
+      color: #cbd5e1;
+      font-size: 14.5px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Structured content styling */
+    .section-block {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+    }
+
+    .highlight-box {
+      background: rgba(59, 130, 246, 0.08);
+      border-left: 4px solid var(--accent-blue);
+      padding: 14px 18px;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      margin: 14px 0;
+      font-size: 14px;
+      color: #e2e8f0;
+    }
+
+    .bullet-list {
+      list-style-type: none;
+      padding-left: 0;
+    }
+
+    .bullet-list li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 6px;
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    /* Component cards grid in Tech Architecture */
+    .components-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    .comp-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .comp-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 4px;
+    }
+
+    .comp-tech {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #a78bfa;
+      margin-bottom: 8px;
+    }
+
+    .comp-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .data-table th, .data-table td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-card);
+    }
+
+    .data-table th {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .data-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .total-row {
+      font-weight: 800;
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.08) !important;
+    }
+
+    /* JSON viewer */
+    .json-pre {
+      background: #050811;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-card);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #38bdf8;
+      overflow-x: auto;
+      max-height: 500px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-card);
+      color: white;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toast-icon svg {
+      width: 12px;
+      height: 12px;
+      stroke: white;
+      stroke-width: 3;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navbar -->
+  <header class="navbar">
+    <a href="/" class="brand" id="brand-link">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <div class="brand-title">Proposal<span>Craft</span></div>
+    </a>
+
+    <div class="nav-tags">
+      <div class="tag-badge">
+        <div class="dot"></div>
+        <span>LangGraph + Groq LLM + ReportLab</span>
+      </div>
+      <a href="/docs" class="docs-btn" target="_blank" id="api-docs-link">API Swagger</a>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-pill">⚡ Autonomous Enterprise Document Synthesis Pipeline</div>
+      <h1 class="hero-title">Transform Client RFPs into <br/><span class="gradient-text">Winning Executive Proposals</span></h1>
+      <p class="hero-subtitle">
+        Deploy specialized LangGraph agents to extract requirements, plan section architecture, draft technical scopes, estimate milestone pricing, and compile pixel-perfect <strong>PDF</strong>, <strong>Word DOCX</strong>, and <strong>5-slide PPTX</strong> decks.
+      </p>
+    </section>
+
+    <!-- Generator Form Card -->
+    <section class="card" id="input-card">
+      <div class="card-header">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+          <span>Client RFP / Scope Ingestion</span>
+        </div>
+      </div>
+
+      <!-- Presets -->
+      <div class="presets-toolbar">
+        <span class="preset-label">Quick Presets:</span>
+        <button type="button" class="preset-pill" onclick="loadPreset('cloud')" id="preset-cloud-btn">Cloud Migration & Modernization</button>
+        <button type="button" class="preset-pill" onclick="loadPreset('ecommerce')" id="preset-ecom-btn">Enterprise E-Commerce Platform</button>
+        <button type="button" class="preset-pill" onclick="loadPreset('aiagent')" id="preset-ai-btn">Autonomous AI Customer Support</button>
+      </div>
+
+      <!-- Metadata fields -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="client-name-input">Client Organization</label>
+          <input type="text" id="client-name-input" class="text-input" placeholder="e.g. Apex Global Logistics" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="project-title-input">Project Title</label>
+          <input type="text" id="project-title-input" class="text-input" placeholder="e.g. Cloud Modernization & Distributed Architecture" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="currency-select">Currency</label>
+          <select id="currency-select" class="select-input">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="INR">INR (₹)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- RFP Textarea -->
+      <div class="form-group">
+        <label class="form-label" for="rfp-textarea">RFP Content / Requirements Statement</label>
+        <textarea id="rfp-textarea" class="textarea-input" placeholder="Paste your client RFP document, scope notes, technical requirements, or budget constraints here..."></textarea>
+      </div>
+
+      <!-- PDF / TXT File Upload -->
+      <div class="dropzone" id="file-dropzone" onclick="document.getElementById('rfp-file-input').click()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <div class="dropzone-text" id="dropzone-text">
+          Drag & drop an <strong>RFP document (PDF or TXT)</strong> or click to browse
+        </div>
+        <input type="file" id="rfp-file-input" accept=".pdf,.txt,.md" style="display: none;" onchange="handleFileSelected(event)" />
+      </div>
+
+      <!-- Action Button -->
+      <button type="button" class="btn-submit" id="generate-btn" onclick="generateProposal()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span id="generate-btn-text">Generate Proposal</span>
+      </button>
+
+      <!-- Agent State Machine Stepper -->
+      <div class="stepper" id="stepper">
+        <div class="step-item" id="step-1">
+          <div class="step-indicator">1</div>
+          <div>
+            <div class="step-name">Extractor</div>
+            <div class="step-desc">Parse Requirements</div>
+          </div>
+        </div>
+        <div class="step-item" id="step-2">
+          <div class="step-indicator">2</div>
+          <div>
+            <div class="step-name">Planner</div>
+            <div class="step-desc">Section Architecture</div>
+          </div>
+        </div>
+        <div class="step-item" id="step-3">
+          <div class="step-indicator">3</div>
+          <div>
+            <div class="step-name">Writers</div>
+            <div class="step-desc">Drafting Sections</div>
+          </div>
+        </div>
+        <div class="step-item" id="step-4">
+          <div class="step-indicator">4</div>
+          <div>
+            <div class="step-name">Reviewer</div>
+            <div class="step-desc">Compliance Audit</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="card results-card" id="results-card">
+      
+      <!-- Export Action Bar -->
+      <div class="export-bar">
+        <div class="export-info">
+          <div class="export-label">Synthesized Proposal Package</div>
+          <div class="export-title" id="result-proposal-title">Commercial & Architecture Proposal</div>
+        </div>
+        <div class="export-actions">
+          <button class="btn-export btn-export-pdf" id="download-pdf-btn" onclick="downloadDocument('pdf')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download PDF
+          </button>
+          <button class="btn-export btn-export-docx" id="download-docx-btn" onclick="downloadDocument('docx')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download DOCX
+          </button>
+          <button class="btn-export btn-export-pptx" id="download-pptx-btn" onclick="downloadDocument('pptx')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download PPTX (5-Slide Pitch)
+          </button>
+        </div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Compliance Score</div>
+          <div class="metric-value emerald" id="metric-compliance">98%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Tone & Alignment</div>
+          <div class="metric-value blue" id="metric-tone">96%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Total Commercials</div>
+          <div class="metric-value amber" id="metric-investment">$120,000</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Delivery Timeline</div>
+          <div class="metric-value" id="metric-timeline">14 Weeks</div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('exec-summary', event)" id="tab-exec-btn">Executive Summary</button>
+        <button class="tab-btn" onclick="switchTab('tech-arch', event)" id="tab-arch-btn">Technical Architecture</button>
+        <button class="tab-btn" onclick="switchTab('deliverables', event)" id="tab-deliv-btn">Scope & Deliverables</button>
+        <button class="tab-btn" onclick="switchTab('pricing', event)" id="tab-pricing-btn">Pricing & Milestones</button>
+        <button class="tab-btn" onclick="switchTab('json-tab', event)" id="tab-json-btn">Full Proposal JSON</button>
+      </div>
+
+      <!-- Tab Contents -->
+      <div class="tab-content active" id="tab-exec-summary">
+        <div class="section-block">
+          <div class="section-title">Strategic Challenge</div>
+          <p id="view-exec-challenge"></p>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Proposed Solution</div>
+          <p id="view-exec-solution"></p>
+        </div>
+        <div class="highlight-box" id="view-exec-value"></div>
+        <div class="section-block">
+          <div class="section-title">Key Executive Highlights</div>
+          <ul class="bullet-list" id="view-exec-highlights"></ul>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-tech-arch">
+        <div class="section-block">
+          <div class="section-title">Architecture Blueprint</div>
+          <p id="view-arch-overview"></p>
+        </div>
+        <div class="section-block">
+          <div class="section-title">System Modules & Technology Stack</div>
+          <div class="components-grid" id="view-arch-components"></div>
+        </div>
+        <div class="section-block" style="margin-top: 20px;">
+          <div class="section-title">Security & Compliance</div>
+          <p id="view-arch-security"></p>
+        </div>
+        <div class="section-block">
+          <div class="section-title">Scalability & Disaster Recovery</div>
+          <p id="view-arch-scalability"></p>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-deliverables">
+        <div class="section-block">
+          <div class="section-title">Phased Implementation Roadmap</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Phase & Timeline</th>
+                <th style="width: 45%;">Tangible Deliverables</th>
+                <th style="width: 30%;">Milestone Outcome</th>
+              </tr>
+            </thead>
+            <tbody id="view-deliv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-pricing">
+        <div class="section-block">
+          <div class="section-title">Milestone Investment Schedule</div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Milestone</th>
+                <th>Trigger Deliverable</th>
+                <th>Target Date</th>
+                <th>Amount</th>
+                <th>Share</th>
+              </tr>
+            </thead>
+            <tbody id="view-pricing-tbody"></tbody>
+          </table>
+        </div>
+        <div class="section-block" style="margin-top: 16px;">
+          <div class="section-title">Payment Terms & Assumptions</div>
+          <p id="view-pricing-terms"></p>
+          <ul class="bullet-list" id="view-pricing-assumptions" style="margin-top: 8px;"></ul>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-json-tab">
+        <pre class="json-pre" id="view-raw-json"></pre>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Toast Element -->
+  <div class="toast" id="toast">
+    <div class="toast-icon">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <span id="toast-message">Proposal generated successfully!</span>
+  </div>
+
+  <script>
+    let activeProposalId = null;
+    let selectedFile = null;
+
+    const PRESETS = {
+      cloud: {
+        client: "Vanguard Global Logistics",
+        title: "Enterprise Cloud Modernization & Microservices Migration",
+        currency: "USD",
+        rfp: `REQUEST FOR PROPOSAL (RFP):
+Client: Vanguard Global Logistics
+Objective: Modernize our legacy on-premise supply chain dispatch system into a cloud-native, microservices-driven architecture.
+
+Scope Requirements:
+1. Decompose core monolithic system into resilient containerized services running on AWS EKS.
+2. Build event-driven streaming pipelines using Apache Kafka for real-time fleet GPS tracking.
+3. Establish a robust API Gateway with OAuth2/OIDC role-based access control (RBAC).
+4. Full SOC2 Type II and ISO 27001 compliance standards with zero downtime migration strategy.
+5. Provide automated CI/CD pipelines, Terraform infrastructure-as-code, and 99.99% availability SLA.
+
+Timeline & Budget:
+Project must complete within 14-16 weeks. Budget is capped around $120,000 to $150,000 USD.`
+      },
+      ecommerce: {
+        client: "Nordic Luxury Goods Group",
+        title: "Composable Headless E-Commerce Platform",
+        currency: "EUR",
+        rfp: `RFP: Next-Generation Headless Commerce Architecture
+Client: Nordic Luxury Goods Group
+We are looking for an agency/system integrator to deliver a multi-region composable e-commerce platform.
+
+Requirements:
+- Headless storefront using Next.js with sub-second page loads globally.
+- Integration with commercetools or Shopify Plus backends, Algolia AI search, and Stripe payment gateway.
+- Multi-currency, multi-language localization (EN, FR, DE, SE).
+- High-concurrency flash sale resilience (capable of handling 50,000 simultaneous checkouts).
+- PCI-DSS Level 1 compliance and GDPR privacy adherence.
+Timeline: 12 weeks. Estimated budget: 95,000 EUR.`
+      },
+      aiagent: {
+        client: "FinTrust Financial Services",
+        title: "Autonomous Multi-Agent Customer Support & Compliance System",
+        currency: "USD",
+        rfp: `RFP: Enterprise AI Support Concierge & KYC Compliance Pipeline
+Organization: FinTrust Financial Services
+Problem: High support queue latency and manual KYC onboarding reviews causing user friction.
+
+Requirements:
+- Multi-agent conversational pipeline using LangGraph and Groq fast inference for instant tier-1 resolutions.
+- Real-time document parsing for identity verification and anti-fraud anomaly detection.
+- Human-in-the-loop escalation routing with full audit trails.
+- Strict data sovereignty, encryption at rest (AES-256), and banking regulatory adherence.
+Timeline: 10-12 weeks. Budget target: $85,000 USD.`
+      }
+    };
+
+    function loadPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+      document.getElementById('client-name-input').value = p.client;
+      document.getElementById('project-title-input').value = p.title;
+      document.getElementById('currency-select').value = p.currency;
+      document.getElementById('rfp-textarea').value = p.rfp;
+      showToast(`Loaded preset: ${p.title}`);
+    }
+
+    function handleFileSelected(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        document.getElementById('dropzone-text').innerHTML = `Selected file: <strong>${file.name}</strong> (${(file.size / 1024).toFixed(1)} KB)`;
+        showToast(`Attached document: ${file.name}`);
+      }
+    }
+
+    // Drag and Drop
+    const dropzone = document.getElementById('file-dropzone');
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        selectedFile = e.dataTransfer.files[0];
+        document.getElementById('dropzone-text').innerHTML = `Selected file: <strong>${selectedFile.name}</strong> (${(selectedFile.size / 1024).toFixed(1)} KB)`;
+        showToast(`Attached document: ${selectedFile.name}`);
+      }
+    });
+
+    async function generateProposal() {
+      const rfpText = document.getElementById('rfp-textarea').value.trim();
+      const clientName = document.getElementById('client-name-input').value.trim();
+      const projectTitle = document.getElementById('project-title-input').value.trim();
+      const currency = document.getElementById('currency-select').value;
+
+      if (!rfpText && !selectedFile) {
+        alert('Please paste RFP text or attach a document first.');
+        return;
+      }
+
+      const genBtn = document.getElementById('generate-btn');
+      const genBtnText = document.getElementById('generate-btn-text');
+      const stepper = document.getElementById('stepper');
+      const resultsCard = document.getElementById('results-card');
+
+      genBtn.disabled = true;
+      genBtnText.textContent = 'Orchestrating Agents...';
+      stepper.style.display = 'grid';
+      resultsCard.style.display = 'none';
+
+      // Animate steps
+      animateStep(1);
+      const stepTimer1 = setTimeout(() => animateStep(2), 2500);
+      const stepTimer2 = setTimeout(() => animateStep(3), 5000);
+      const stepTimer3 = setTimeout(() => animateStep(4), 8500);
+
+      try {
+        let response;
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          if (rfpText) formData.append('rfp_text', rfpText);
+          if (clientName) formData.append('client_name', clientName);
+          if (projectTitle) formData.append('project_title', projectTitle);
+          formData.append('currency', currency);
+
+          response = await fetch('/api/v1/proposals/generate', {
+            method: 'POST',
+            body: formData,
+          });
+        } else {
+          response = await fetch('/api/v1/proposals/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              rfp_text: rfpText,
+              client_name: clientName || undefined,
+              project_title: projectTitle || undefined,
+              currency: currency,
+            }),
+          });
+        }
+
+        clearTimeout(stepTimer1);
+        clearTimeout(stepTimer2);
+        clearTimeout(stepTimer3);
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || 'Failed to generate proposal.');
+        }
+
+        const data = await response.json();
+        activeProposalId = data.id;
+
+        // Complete all steps
+        for (let i = 1; i <= 4; i++) {
+          const el = document.getElementById(`step-${i}`);
+          el.className = 'step-item done';
+        }
+
+        renderProposal(data.proposal || data);
+        resultsCard.style.display = 'block';
+        showToast('Proposal generated and verified successfully!');
+
+        resultsCard.scrollIntoView({ behavior: 'smooth' });
+      } catch (err) {
+        console.error(err);
+        alert(`Error: ${err.message}`);
+      } finally {
+        genBtn.disabled = false;
+        genBtnText.textContent = 'Generate Proposal';
+      }
+    }
+
+    function animateStep(stepNum) {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`step-${i}`);
+        if (i < stepNum) el.className = 'step-item done';
+        else if (i === stepNum) el.className = 'step-item active';
+        else el.className = 'step-item';
+      }
+    }
+
+    function renderProposal(proposal) {
+      const p = proposal;
+      const sections = p.sections || {};
+      const exec = sections.executive_summary || {};
+      const tech = sections.technical_architecture || {};
+      const deliv = sections.deliverables || {};
+      const pricing = sections.pricing || {};
+      const review = p.review_feedback || {};
+
+      document.getElementById('result-proposal-title').textContent = p.project_title || 'Enterprise Commercial Proposal';
+
+      // Metrics
+      document.getElementById('metric-compliance').textContent = `${review.compliance_score || 98}%`;
+      document.getElementById('metric-tone').textContent = `${review.tone_score || 96}%`;
+      const cur = pricing.currency || 'USD';
+      const tot = pricing.total_investment ? Number(pricing.total_investment).toLocaleString() : '120,000';
+      document.getElementById('metric-investment').textContent = `${tot} ${cur}`;
+      const phaseCount = (deliv.phases || []).length;
+      document.getElementById('metric-timeline').textContent = phaseCount > 0 ? `${phaseCount * 3}-${phaseCount * 4} Weeks` : '12-14 Weeks';
+
+      // Exec Summary
+      document.getElementById('view-exec-challenge').textContent = exec.challenge || 'Strategic challenge assessment.';
+      document.getElementById('view-exec-solution').textContent = exec.proposed_solution || 'Tailored solution engineering.';
+      document.getElementById('view-exec-value').innerHTML = `<strong>Key Strategic Value & Expected ROI:</strong><br/>${exec.strategic_value || 'Accelerated time-to-market.'}`;
+      
+      const hlUl = document.getElementById('view-exec-highlights');
+      hlUl.innerHTML = '';
+      (exec.highlights || []).forEach(hl => {
+        const li = document.createElement('li');
+        li.textContent = hl;
+        hlUl.appendChild(li);
+      });
+
+      // Technical Arch
+      document.getElementById('view-arch-overview').textContent = tech.overview || 'Microservices architecture.';
+      const compGrid = document.getElementById('view-arch-components');
+      compGrid.innerHTML = '';
+      (tech.components || []).forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'comp-card';
+        card.innerHTML = `
+          <div class="comp-name">${c.name || 'Component'}</div>
+          <div class="comp-tech">${c.tech_stack || 'Technology'}</div>
+          <div class="comp-desc">${c.description || ''}</div>
+        `;
+        compGrid.appendChild(card);
+      });
+      document.getElementById('view-arch-security').textContent = tech.security_and_compliance || 'SOC2, AES-256, TLS 1.3.';
+      document.getElementById('view-arch-scalability').textContent = tech.scalability_and_resilience || 'High-availability Kubernetes.';
+
+      // Deliverables Table
+      const delivTbody = document.getElementById('view-deliv-tbody');
+      delivTbody.innerHTML = '';
+      (deliv.phases || []).forEach(phase => {
+        const tr = document.createElement('tr');
+        const items = (phase.deliverables || []).map(d => `• ${d}`).join('<br/>');
+        tr.innerHTML = `
+          <td><strong>${phase.phase}</strong><br/><span style="color:#64748b;font-size:11px;">${phase.duration}</span></td>
+          <td>${items}</td>
+          <td>${phase.outcome || ''}</td>
+        `;
+        delivTbody.appendChild(tr);
+      });
+
+      // Pricing Table
+      const priceTbody = document.getElementById('view-pricing-tbody');
+      priceTbody.innerHTML = '';
+      (pricing.milestones || []).forEach(m => {
+        const tr = document.createElement('tr');
+        const amt = Number(m.amount || 0).toLocaleString();
+        tr.innerHTML = `
+          <td><strong>${m.milestone}</strong></td>
+          <td>${m.deliverable}</td>
+          <td>${m.timeline}</td>
+          <td>${amt} ${cur}</td>
+          <td>${m.percentage || ''}</td>
+        `;
+        priceTbody.appendChild(tr);
+      });
+
+      // Total row
+      const totTr = document.createElement('tr');
+      totTr.className = 'total-row';
+      totTr.innerHTML = `
+        <td><strong>Total Commercial Value</strong></td>
+        <td>All Scoped Deliverables Included</td>
+        <td>-</td>
+        <td><strong>${tot} ${cur}</strong></td>
+        <td><strong>100%</strong></td>
+      `;
+      priceTbody.appendChild(totTr);
+
+      document.getElementById('view-pricing-terms').textContent = pricing.payment_terms || 'Net 30 days upon milestone acceptance.';
+      const assUl = document.getElementById('view-pricing-assumptions');
+      assUl.innerHTML = '';
+      (pricing.assumptions || []).forEach(a => {
+        const li = document.createElement('li');
+        li.textContent = a;
+        assUl.appendChild(li);
+      });
+
+      // Raw JSON
+      document.getElementById('view-raw-json').textContent = JSON.stringify(p, null, 2);
+    }
+
+    function switchTab(tabId, event) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+    }
+
+    function downloadDocument(format) {
+      if (!activeProposalId) {
+        alert('No proposal has been generated yet.');
+        return;
+      }
+      showToast(`Downloading ${format.toUpperCase()}...`);
+      window.location.href = `/api/v1/proposals/${activeProposalId}/export/${format}`;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+  </script>
+</body>
+</html>
